@@ -20,8 +20,8 @@ export const BASES: Option[] = [
     label: 'Soya',
     desc: 'Creamy classic. Smooth and balanced.',
     color: '#F2EAD8',
-    // Soy beans
-    image: u('photo-1612528443702-f6741f70a049'),
+    // Soy beans (local image)
+    image: '/options/soy.png',
   },
   {
     id: 'oat',
@@ -44,8 +44,8 @@ export const BASES: Option[] = [
     label: 'Coconut',
     desc: 'Tropical, rich and rounded.',
     color: '#F5EFE0',
-    // Coconut
-    image: u('photo-1581375074612-d1fd0e661aeb'),
+    // Coconut (local image)
+    image: '/options/coconut.png',
   },
 ];
 
@@ -82,8 +82,8 @@ export const TOPPINGS: Option[] = [
     label: 'Granola',
     desc: 'Crunchy oats and seeds.',
     color: '#B68D5B',
-    // Granola bowl
-    image: u('photo-1517593456449-0cf65f5d2444'),
+    // Granola (local image)
+    image: '/options/granola.png',
   },
   {
     id: 'strawberry',
@@ -101,8 +101,8 @@ export const FLAVORS: Option[] = [
     label: 'Vanilla',
     desc: 'Madagascar bourbon.',
     color: '#E8946B',
-    // Vanilla beans
-    image: u('photo-1611080626919-7cf5a9dbab12'),
+    // Vanilla beans (local image)
+    image: '/options/vanilla.png',
   },
   {
     id: 'lemon',
@@ -117,16 +117,16 @@ export const FLAVORS: Option[] = [
     label: 'Caramel',
     desc: 'Salted, golden, indulgent.',
     color: '#B87A3D',
-    // Caramel sauce
-    image: u('photo-1599785209707-a456fc1337e3'),
+    // Caramel sauce (local image)
+    image: '/options/caramel.png',
   },
   {
     id: 'pistachio',
     label: 'Pistachio',
     desc: 'Mediterranean nut, refined.',
     color: '#8FA86E',
-    // Pistachios
-    image: u('photo-1615485290382-441e4d049cb5'),
+    // Pistachios (local image)
+    image: '/options/pistachio.png',
   },
   {
     id: 'matcha',
