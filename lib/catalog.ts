@@ -1,4 +1,6 @@
 // Central catalog for the Alpro configurator.
+// Image URLs come from Unsplash — these are highly popular, stable photos
+// chosen for their relevance and longevity.
 
 export type Option = {
   id: string;
@@ -6,8 +8,10 @@ export type Option = {
   desc: string;
   color: string;
   image: string;
+  productImage?: string; // Used by FLAVORS to point to the final yogurt photo
 };
 
+// Helper: build an Unsplash CDN URL from a known photo ID with consistent sizing.
 const u = (id: string) =>
   `https://images.unsplash.com/${id}?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80`;
 
@@ -17,6 +21,7 @@ export const BASES: Option[] = [
     label: 'Soya',
     desc: 'Creamy classic. Smooth and balanced.',
     color: '#F2EAD8',
+    // Soy beans (local image)
     image: '/options/soy.png',
   },
   {
@@ -24,6 +29,7 @@ export const BASES: Option[] = [
     label: 'Oat',
     desc: 'Naturally sweet, velvety texture.',
     color: '#EDE0C4',
+    // Oat grain bowl
     image: u('photo-1614961233913-a5113a4a34ed'),
   },
   {
@@ -31,6 +37,7 @@ export const BASES: Option[] = [
     label: 'Almond',
     desc: 'Light, nutty, refreshing.',
     color: '#E8DCC4',
+    // Almonds
     image: u('photo-1508061253366-f7da158b6d46'),
   },
   {
@@ -38,6 +45,7 @@ export const BASES: Option[] = [
     label: 'Coconut',
     desc: 'Tropical, rich and rounded.',
     color: '#F5EFE0',
+    // Coconut (local image)
     image: '/options/coconut.png',
   },
 ];
@@ -48,6 +56,7 @@ export const PROTEINS: Option[] = [
     label: 'Low Protein',
     desc: 'Light and everyday. 5g per serving.',
     color: '#B8CDD9',
+    // Light meal / leaf
     image: u('photo-1490818387583-1baba5e638af'),
   },
   {
@@ -55,6 +64,7 @@ export const PROTEINS: Option[] = [
     label: 'High Protein',
     desc: 'Boosted for performance. 15g per serving.',
     color: '#6B7F5C',
+    // Fitness / workout
     image: u('photo-1517836357463-d25dfeac3438'),
   },
 ];
@@ -65,6 +75,7 @@ export const TOPPINGS: Option[] = [
     label: 'Berries',
     desc: 'Blueberries & raspberries.',
     color: '#7B3F5F',
+    // Mixed berries
     image: u('photo-1498557850523-fd3d118b962e'),
   },
   {
@@ -72,6 +83,7 @@ export const TOPPINGS: Option[] = [
     label: 'Granola',
     desc: 'Crunchy oats and seeds.',
     color: '#B68D5B',
+    // Granola (local image)
     image: '/options/granola.png',
   },
   {
@@ -79,6 +91,7 @@ export const TOPPINGS: Option[] = [
     label: 'Strawberry',
     desc: 'Fresh sliced strawberries.',
     color: '#D45B5B',
+    // Strawberries
     image: u('photo-1464965911861-746a04b4bca6'),
   },
 ];
@@ -89,35 +102,45 @@ export const FLAVORS: Option[] = [
     label: 'Vanilla',
     desc: 'Madagascar bourbon.',
     color: '#E8946B',
+    // Vanilla beans (local image)
     image: '/options/vanilla.png',
+    productImage: '/options/yogurt-vanilla.png',
   },
   {
     id: 'lemon',
     label: 'Lemon',
     desc: 'Bright and zesty.',
     color: '#E8C76B',
+    // Lemons
     image: u('photo-1590502593747-42a996133562'),
+    productImage: '/options/yogurt-lemon.png',
   },
   {
     id: 'caramel',
     label: 'Caramel',
     desc: 'Salted, golden, indulgent.',
     color: '#B87A3D',
+    // Caramel sauce (local image)
     image: '/options/caramel.png',
+    productImage: '/options/yogurt-caramel.png',
   },
   {
     id: 'pistachio',
     label: 'Pistachio',
     desc: 'Mediterranean nut, refined.',
     color: '#8FA86E',
+    // Pistachios (local image)
     image: '/options/pistachio.png',
+    productImage: '/options/yogurt-pistachio.png',
   },
   {
     id: 'matcha',
     label: 'Matcha',
     desc: 'Ceremonial grade green tea.',
     color: '#6B8E4E',
+    // Matcha powder / drink
     image: u('photo-1536256263959-770b48d82b0a'),
+    productImage: '/options/yogurt-matcha.png',
   },
 ];
 
