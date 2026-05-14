@@ -3,24 +3,24 @@
 import { useState } from 'react';
 import { BASES, PROTEINS, TOPPINGS, FLAVORS, pickRandomShops, type Option } from '@/lib/catalog';
 import { saveConfiguration } from '@/lib/supabase';
-import ProductPhoto from '@/components/ProductPhoto';
 import OptionPhoto from '@/components/OptionPhoto';
 import AlproLogo from '@/components/AlproLogo';
 
 type Selection = {
   base?: string;
   protein?: string;
-  toppings: string[];
   flavor?: string;
 };
 
-type Screen = 'welcome' | 'base' | 'protein' | 'topping' | 'flavor' | 'result';
+// New flow: welcome → base → protein → flavor → topping (info) → result
+type Screen = 'welcome' | 'base' | 'protein' | 'flavor' | 'topping' | 'result';
 
-const SCREEN_ORDER: Screen[] = ['welcome', 'base', 'protein', 'topping', 'flavor', 'result'];
+// All 3 toppings are now included by default for every bowl.
+const INCLUDED_TOPPINGS = ['berries', 'granola', 'strawberry'];
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>('welcome');
-  const [selection, setSelection] = useState<Selection>({ toppings: [] });
+  const [selection, setSelection] = useState<Selection>({});
   const [shops, setShops] = useState<ReturnType<typeof pickRandomShops>>([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -28,42 +28,27 @@ export default function Home() {
   const currentStep =
     screen === 'base' ? 1
       : screen === 'protein' ? 2
-      : screen === 'topping' ? 3
-      : screen === 'flavor' ? 4
+      : screen === 'flavor' ? 3
+      : screen === 'topping' ? 4
       : 0;
 
   const go = (s: Screen) => setScreen(s);
 
   const handleSingleSelect = (key: 'base' | 'protein' | 'flavor', id: string, next: Screen) => {
     setSelection((prev) => ({ ...prev, [key]: id }));
-    setTimeout(() => {
-      if (next === 'result') {
-        finalize({ ...selection, [key]: id });
-      } else {
-        go(next);
-      }
-    }, 350);
+    setTimeout(() => go(next), 350);
   };
 
-  const toggleTopping = (id: string) => {
-    setSelection((prev) => {
-      const has = prev.toppings.includes(id);
-      if (has) return { ...prev, toppings: prev.toppings.filter((t) => t !== id) };
-      if (prev.toppings.length >= 3) return prev;
-      return { ...prev, toppings: [...prev.toppings, id] };
-    });
-  };
-
-  async function finalize(final: Selection) {
+  async function finalize() {
     setShops(pickRandomShops(3));
     go('result');
-    if (final.base && final.protein && final.toppings.length > 0 && final.flavor) {
+    if (selection.base && selection.protein && selection.flavor) {
       setSaving(true);
       await saveConfiguration({
-        base: final.base,
-        protein: final.protein,
-        toppings: final.toppings,
-        flavor: final.flavor,
+        base: selection.base,
+        protein: selection.protein,
+        toppings: INCLUDED_TOPPINGS,
+        flavor: selection.flavor,
       });
       setSaving(false);
       setSaved(true);
@@ -71,13 +56,13 @@ export default function Home() {
   }
 
   const reset = () => {
-    setSelection({ toppings: [] });
+    setSelection({});
     setShops([]);
     setSaved(false);
     go('welcome');
   };
 
-  // WELCOME
+  // ---------- WELCOME ----------
   if (screen === 'welcome') {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 step-enter relative">
@@ -94,7 +79,7 @@ export default function Home() {
             <span className="italic text-sage">Alpro</span> bowl.
           </h1>
           <p className="mt-6 max-w-md mx-auto text-ink/70 text-base md:text-lg leading-relaxed">
-            Four bases. Five flavors. Up to three toppings. A protein level you choose.
+            Four bases. Five flavors. Three signature toppings included.
             Designed by you, ready in Barcelona.
           </p>
           <button
@@ -112,15 +97,12 @@ export default function Home() {
     );
   }
 
-  // RESULT
+  // ---------- RESULT ----------
   if (screen === 'result') {
-    const baseLabel = BASES.find((b) => b.id === selection.base)?.label;
-    const proteinLabel = PROTEINS.find((p) => p.id === selection.protein)?.label;
-    const toppingLabels = selection.toppings
-      .map((id) => TOPPINGS.find((t) => t.id === id)?.label)
-      .filter(Boolean)
-      .join(', ');
-    const flavorLabel = FLAVORS.find((f) => f.id === selection.flavor)?.label;
+    const baseOpt = BASES.find((b) => b.id === selection.base);
+    const proteinOpt = PROTEINS.find((p) => p.id === selection.protein);
+    const flavorOpt = FLAVORS.find((f) => f.id === selection.flavor);
+    const productImage = flavorOpt?.productImage || '';
 
     return (
       <main className="min-h-screen p-6 md:p-12 step-enter relative">
@@ -134,33 +116,49 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Product visual — just the photo, nothing on top */}
             <div className="flex justify-center md:justify-end">
               <div className="relative">
                 <div className="absolute -inset-8 bg-sand/40 rounded-full blur-3xl -z-10" />
-                <ProductPhoto
-                  base={selection.base}
-                  protein={selection.protein}
-                  toppings={selection.toppings}
-                  flavor={selection.flavor}
-                  size={460}
+                <img
+                  src={productImage}
+                  alt={`Alpro ${flavorOpt?.label} yogurt`}
+                  className="w-full max-w-md object-contain"
+                  style={{
+                    filter: 'drop-shadow(0 25px 35px rgba(40, 40, 30, 0.18))',
+                  }}
                 />
               </div>
             </div>
 
+            {/* Details */}
             <div>
               <div className="font-mono text-xs tracking-widest text-sage uppercase mb-3">
                 Your creation
               </div>
-              <h2 className="font-display text-5xl leading-tight text-navy mb-2">{flavorLabel}</h2>
+              <h2 className="font-display text-5xl leading-tight text-navy mb-2">
+                {flavorOpt?.label}
+              </h2>
               <p className="font-display italic text-2xl text-sage mb-8">
-                with {toppingLabels.toLowerCase()}, on {baseLabel?.toLowerCase()} base
+                on {baseOpt?.label.toLowerCase()} base · {proteinOpt?.label.toLowerCase()}
               </p>
 
-              <div className="grid grid-cols-2 gap-3 mb-10">
-                <SpecCard label="Base" value={baseLabel} />
-                <SpecCard label="Protein" value={proteinLabel} />
-                <SpecCard label="Toppings" value={toppingLabels} />
-                <SpecCard label="Flavor" value={flavorLabel} />
+              {/* Horizontal info strip below visual context */}
+              <div className="bg-bone border border-ink/8 rounded-2xl px-5 py-4 mb-8">
+                <div className="font-mono text-[10px] tracking-widest text-ink/40 uppercase mb-2">
+                  Included in your bowl
+                </div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-display text-base text-navy">
+                  <span>{baseOpt?.label}</span>
+                  <span className="text-ink/20">·</span>
+                  <span>{proteinOpt?.label}</span>
+                  <span className="text-ink/20">·</span>
+                  <span className="italic">Berries</span>
+                  <span className="text-ink/20">·</span>
+                  <span className="italic">Granola</span>
+                  <span className="text-ink/20">·</span>
+                  <span className="italic">Strawberry</span>
+                </div>
               </div>
 
               <div className="border-t border-ink/10 pt-8">
@@ -192,45 +190,83 @@ export default function Home() {
     );
   }
 
-  // CHOICE SCREENS
-  const stepConfig: Record<'base' | 'protein' | 'topping' | 'flavor', { title: string; subtitle: string; options: Option[]; next: Screen }> = {
+  // ---------- TOPPING (info-only screen, step 4) ----------
+  if (screen === 'topping') {
+    const includedToppings = TOPPINGS.filter((t) => INCLUDED_TOPPINGS.includes(t.id));
+    return (
+      <main className="min-h-screen p-6 md:p-12 step-enter relative">
+        <BackgroundShapes />
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <Header step={currentStep} />
+
+          <div className="max-w-2xl mb-12">
+            <div className="font-mono text-xs tracking-widest text-sage uppercase mb-3">Step 4</div>
+            <h2 className="font-display text-4xl md:text-6xl leading-[1.05] tracking-tight text-navy">
+              Here are your 3 toppings included.
+            </h2>
+            <p className="mt-4 text-ink/60 text-lg font-display italic">
+              Every Alpro bowl comes loaded — no choices to make.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            {includedToppings.map((opt) => (
+              <div
+                key={opt.id}
+                className="rounded-3xl p-4 md:p-5 border-2 border-sage bg-bone"
+              >
+                <OptionPhoto src={opt.image} alt={opt.label} />
+                <div className="flex items-start justify-between mt-4">
+                  <div>
+                    <div className="font-display text-2xl text-navy">{opt.label}</div>
+                    <div className="text-sm text-ink/60 mt-1 leading-snug">{opt.desc}</div>
+                  </div>
+                  <div className="shrink-0 ml-2 mt-1 w-6 h-6 rounded-full bg-sage text-bone flex items-center justify-center">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 flex items-center justify-between">
+            <button onClick={() => go('flavor')} className="font-mono text-xs tracking-widest text-ink/60 hover:text-navy uppercase">
+              ← Back
+            </button>
+            <button
+              onClick={finalize}
+              className="group inline-flex items-center gap-3 bg-navy text-cream px-7 py-3.5 rounded-full font-body font-medium text-sm tracking-wide hover:bg-deepSage transition-all duration-500"
+            >
+              SEE MY BOWL
+              <span className="inline-block transition-transform duration-500 group-hover:translate-x-1">→</span>
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // ---------- CHOICE SCREENS (base / protein / flavor) ----------
+  const stepConfig: Record<'base' | 'protein' | 'flavor', { title: string; subtitle: string; options: Option[]; next: Screen }> = {
     base: { title: 'Pick your base.', subtitle: 'Every great bowl starts here.', options: BASES, next: 'protein' },
-    protein: { title: 'How much protein?', subtitle: 'Light and everyday, or fuel for the day.', options: PROTEINS, next: 'topping' },
-    topping: { title: 'Choose your toppings.', subtitle: 'Pick up to three. The more, the merrier.', options: TOPPINGS, next: 'flavor' },
-    flavor: { title: 'Final touch — your flavor.', subtitle: 'The heart of your bowl.', options: FLAVORS, next: 'result' },
+    protein: { title: 'How much protein?', subtitle: 'Light and everyday, or fuel for the day.', options: PROTEINS, next: 'flavor' },
+    flavor: { title: 'Pick your flavor.', subtitle: 'The heart of your bowl.', options: FLAVORS, next: 'topping' },
   };
 
-  const cur = stepConfig[screen as 'base' | 'protein' | 'topping' | 'flavor'];
-  const isTopping = screen === 'topping';
+  const cur = stepConfig[screen as 'base' | 'protein' | 'flavor'];
 
   return (
     <main className="min-h-screen p-6 md:p-12 step-enter relative">
       <BackgroundShapes />
       <div className="relative z-10 max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-12">
-          <AlproLogo size={36} />
-          <div className="flex items-center gap-2">
-            {[1, 2, 3, 4].map((n) => (
-              <div
-                key={n}
-                className={`h-1 rounded-full transition-all duration-500 ${
-                  n === currentStep ? 'w-10 bg-sage' : n < currentStep ? 'w-6 bg-sage/50' : 'w-6 bg-ink/15'
-                }`}
-              />
-            ))}
-            <span className="ml-3 font-mono text-xs tracking-widest text-ink/50">{currentStep}/4</span>
-          </div>
-        </div>
+        <Header step={currentStep} />
 
         <div className="max-w-2xl mb-12">
           <div className="font-mono text-xs tracking-widest text-sage uppercase mb-3">Step {currentStep}</div>
           <h2 className="font-display text-4xl md:text-6xl leading-[1.05] tracking-tight text-navy">{cur.title}</h2>
           <p className="mt-4 text-ink/60 text-lg font-display italic">{cur.subtitle}</p>
-          {isTopping && (
-            <p className="mt-3 font-mono text-xs tracking-widest text-sage uppercase">
-              {selection.toppings.length} / 3 selected
-            </p>
-          )}
         </div>
 
         <div
@@ -242,72 +278,30 @@ export default function Home() {
           }`}
         >
           {cur.options.map((opt) => {
-            const isSelected = isTopping
-              ? selection.toppings.includes(opt.id)
-              : (selection as any)[screen] === opt.id;
-
+            const isSelected = (selection as any)[screen] === opt.id;
             return (
               <button
                 key={opt.id}
-                onClick={() => {
-                  if (isTopping) {
-                    toggleTopping(opt.id);
-                  } else {
-                    handleSingleSelect(screen as 'base' | 'protein' | 'flavor', opt.id, cur.next);
-                  }
-                }}
+                onClick={() => handleSingleSelect(screen as 'base' | 'protein' | 'flavor', opt.id, cur.next)}
                 className={`choice-card text-left rounded-3xl p-4 md:p-5 border-2 transition-colors duration-300 ${
                   isSelected ? 'border-sage bg-bone' : 'border-ink/8 bg-bone hover:border-sage/50'
                 }`}
               >
                 <OptionPhoto src={opt.image} alt={opt.label} />
-                <div className="flex items-start justify-between mt-4">
-                  <div>
-                    <div className="font-display text-2xl text-navy">{opt.label}</div>
-                    <div className="text-sm text-ink/60 mt-1 leading-snug">{opt.desc}</div>
-                  </div>
-                  {isTopping && (
-                    <div className={`shrink-0 ml-2 mt-1 w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                      isSelected ? 'bg-sage text-bone' : 'border-2 border-ink/20'
-                    }`}>
-                      {isSelected && (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                          <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </div>
-                  )}
+                <div className="mt-4">
+                  <div className="font-display text-2xl text-navy">{opt.label}</div>
+                  <div className="text-sm text-ink/60 mt-1 leading-snug">{opt.desc}</div>
                 </div>
               </button>
             );
           })}
         </div>
 
-        {isTopping && (
-          <div className="mt-10 flex items-center justify-between">
-            <button onClick={() => go('protein')} className="font-mono text-xs tracking-widest text-ink/60 hover:text-navy uppercase">
-              ← Back
-            </button>
-            <button
-              onClick={() => go('flavor')}
-              disabled={selection.toppings.length === 0}
-              className={`group inline-flex items-center gap-3 px-7 py-3.5 rounded-full font-body font-medium text-sm tracking-wide transition-all duration-500 ${
-                selection.toppings.length === 0
-                  ? 'bg-ink/10 text-ink/30 cursor-not-allowed'
-                  : 'bg-navy text-cream hover:bg-deepSage'
-              }`}
-            >
-              CONTINUE
-              <span className="inline-block transition-transform duration-500 group-hover:translate-x-1">→</span>
-            </button>
-          </div>
-        )}
-
-        {!isTopping && currentStep > 1 && (
+        {currentStep > 1 && (
           <button
             onClick={() => {
-              const idx = SCREEN_ORDER.indexOf(screen);
-              go(SCREEN_ORDER[idx - 1]);
+              if (screen === 'protein') go('base');
+              else if (screen === 'flavor') go('protein');
             }}
             className="mt-10 font-mono text-xs tracking-widest text-ink/60 hover:text-navy uppercase"
           >
@@ -319,11 +313,21 @@ export default function Home() {
   );
 }
 
-function SpecCard({ label, value }: { label: string; value?: string }) {
+function Header({ step }: { step: number }) {
   return (
-    <div className="bg-bone rounded-2xl p-4 border border-ink/5">
-      <div className="font-mono text-[10px] tracking-widest text-ink/40 uppercase">{label}</div>
-      <div className="font-display text-xl text-navy mt-1">{value}</div>
+    <div className="flex justify-between items-center mb-12">
+      <AlproLogo size={36} />
+      <div className="flex items-center gap-2">
+        {[1, 2, 3, 4].map((n) => (
+          <div
+            key={n}
+            className={`h-1 rounded-full transition-all duration-500 ${
+              n === step ? 'w-10 bg-sage' : n < step ? 'w-6 bg-sage/50' : 'w-6 bg-ink/15'
+            }`}
+          />
+        ))}
+        <span className="ml-3 font-mono text-xs tracking-widest text-ink/50">{step}/4</span>
+      </div>
     </div>
   );
 }
